@@ -147,6 +147,8 @@ function App() {
       {artists.length > 0 && (
         <div>
           <h2>Top Artists</h2>
+          <p>Check the artists you have seen live</p>
+
           <ul className="list-group">
             {artists.map((artist) => (
               <li
@@ -155,7 +157,7 @@ function App() {
                   seenArtists[artist.name] ? 'bg-success text-white' : 'bg-danger text-white'
                 }`}
               >
-                {artist.name}
+                {artist.name} ({artist.playcount} scrobbles)
                 <input
                   type="checkbox"
                   checked={!!seenArtists[artist.name]}
