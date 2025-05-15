@@ -6,6 +6,8 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+const API_KEY = import.meta.env.VITE_LASTFM_API_KEY;
+
 function App() {
   const [username, setUsername] = useState('');
   const [timePeriod, setTimePeriod] = useState('7day');
@@ -29,7 +31,7 @@ function App() {
     try {
       setError(null); // Clear any previous errors
       const response = await fetch(
-        `https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${username}&period=${timePeriod}&limit=${artistCount}&api_key=3b2443b7b86e494d4b57c7c5d0c299de&format=json`
+        `https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${username}&period=${timePeriod}&limit=${artistCount}&api_key=${API_KEY}&format=json`
       );
 
       if (!response.ok) {
