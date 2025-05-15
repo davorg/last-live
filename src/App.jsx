@@ -101,6 +101,18 @@ function App() {
     }
   };
 
+  const captureTableAsImage = () => {
+    const tableSection = document.querySelector('.artists-table-section');
+    if (tableSection) {
+      html2canvas(tableSection).then((canvas) => {
+        const link = document.createElement('a');
+        link.download = 'last-live-artists-table.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  };
+
   return (
     <div className="container mt-4">
       <h1 className="text-center">LastFM Top Artists</h1>
@@ -146,26 +158,32 @@ function App() {
       {/* Artists List Section */}
       {artists.length > 0 && (
         <div>
-          <h2>Top Artists</h2>
-          <p>Check the artists you have seen live</p>
+          <div className="artists-table-section">
+            <h2>Top Artists</h2>
+            <p>Check the artists you have seen live</p>
 
-          <ul className="list-group">
-            {artists.map((artist, index) => (
-              <li
-                key={artist.name}
-                className={`list-group-item d-flex justify-content-between align-items-center ${
-                  seenArtists[artist.name] ? 'bg-success text-white' : 'bg-danger text-white'
-                }`}
-              >
-                {artist.name} ({parseInt(artist.playcount).toLocaleString()} {index === 0 ? 'scrobbles' : ''})
-                <input
-                  type="checkbox"
-                  checked={!!seenArtists[artist.name]}
-                  onChange={() => handleCheckboxChange(artist.name)}
-                />
-              </li>
-            ))}
-          </ul>
+            <ul className="list-group">
+              {artists.map((artist, index) => (
+                <li
+                  key={artist.name}
+                  className={`list-group-item d-flex justify-content-between align-items-center ${
+                    seenArtists[artist.name] ? 'bg-success text-white' : 'bg-danger text-white'
+                  }`}
+                >
+                  {artist.name} ({parseInt(artist.playcount).toLocaleString()} {index === 0 ? 'scrobbles' : ''})
+                  <input
+                    type="checkbox"
+                    checked={!!seenArtists[artist.name]}
+                    onChange={() => handleCheckboxChange(artist.name)}
+                  />
+                </li>
+              ))}
+            </ul>
+
+            <button className="btn btn-secondary mt-3" onClick={captureTableAsImage}>
+              Share Table
+            </button>
+          </div>
 
           {/* Results Section */}
           <div className="mt-4 results-section">
