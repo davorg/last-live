@@ -68,7 +68,7 @@ function App() {
   };
 
   const renderPieChart = () => {
-    const seenCount = Object.values(seenArtists).filter(Boolean).length;
+    const seenCount = artists.filter((artist) => seenArtists[artist.name]).length;
     const notSeenCount = artists.length - seenCount;
 
     const data = {
