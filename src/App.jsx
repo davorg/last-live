@@ -3,6 +3,7 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import html2canvas from 'html2canvas';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -90,6 +91,18 @@ function App() {
     }
   };
 
+  const captureResultsAsImage = () => {
+    const resultsSection = document.querySelector('.results-section');
+    if (resultsSection) {
+      html2canvas(resultsSection).then((canvas) => {
+        const link = document.createElement('a');
+        link.download = 'last-live-results.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  };
+
   return (
     <div className="container mt-4">
       <h1 className="text-center">LastFM Top Artists</h1>
@@ -155,7 +168,7 @@ function App() {
           </ul>
 
           {/* Results Section */}
-          <div className="mt-4">
+          <div className="mt-4 results-section">
             <h3>Results</h3>
             <p>
               You have seen {calculateSeenPercentage()}% of your top {artists.length} artists live.
@@ -163,6 +176,9 @@ function App() {
             <div className="pie-chart-placeholder">
               {renderPieChart()}
             </div>
+            <button className="btn btn-secondary mt-3" onClick={captureResultsAsImage}>
+              Share Results
+            </button>
           </div>
         </div>
       )}
