@@ -150,14 +150,14 @@ function App() {
           <p>Check the artists you have seen live</p>
 
           <ul className="list-group">
-            {artists.map((artist) => (
+            {artists.map((artist, index) => (
               <li
                 key={artist.name}
                 className={`list-group-item d-flex justify-content-between align-items-center ${
                   seenArtists[artist.name] ? 'bg-success text-white' : 'bg-danger text-white'
                 }`}
               >
-                {artist.name} ({artist.playcount} scrobbles)
+                {artist.name} ({parseInt(artist.playcount).toLocaleString()} {index === 0 ? 'scrobbles' : ''})
                 <input
                   type="checkbox"
                   checked={!!seenArtists[artist.name]}
