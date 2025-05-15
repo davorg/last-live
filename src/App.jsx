@@ -59,9 +59,7 @@ function App() {
   };
 
   const calculateSeenPercentage = () => {
-    const seenCount = Object.keys(seenArtists).filter(
-      (artistName) => seenArtists[artistName]
-    ).length;
+    const seenCount = artists.filter((artist) => seenArtists[artist.name]).length;
     const totalArtists = artists.length;
     if (totalArtists === 0) return 0; // Avoid division by zero
     return ((seenCount / totalArtists) * 100).toFixed(2);
