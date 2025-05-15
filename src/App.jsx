@@ -84,6 +84,12 @@ function App() {
     return <Pie data={data} />;
   };
 
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      fetchArtists();
+    }
+  };
+
   return (
     <div className="container mt-4">
       <h1 className="text-center">LastFM Top Artists</h1>
@@ -96,6 +102,7 @@ function App() {
           className="form-control"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
 
         <label className="form-label mt-3">Time Period:</label>
