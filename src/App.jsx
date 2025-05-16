@@ -170,7 +170,7 @@ function App() {
                     seenArtists[artist.name] ? 'bg-success text-white' : 'bg-danger text-white'
                   }`}
                 >
-                  {artist.name} ({parseInt(artist.playcount).toLocaleString()} {index === 0 ? 'scrobbles' : ''})
+                  {artist.name} ({parseInt(artist.playcount).toLocaleString()} {index === 0 ? 'scrobbles' : ''}{index === 0 ? '' : ''})
                   <input
                     type="checkbox"
                     checked={!!seenArtists[artist.name]}
