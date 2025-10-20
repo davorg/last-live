@@ -1,6 +1,10 @@
 # Last Live
 
-Last Live is a React application that allows users to explore their top artists from LastFM and track which ones they have seen live. The app fetches data from the LastFM API and provides an interactive interface to mark artists as "seen" or "not seen." It also displays a pie chart summarizing the percentage of artists seen live.
+Last Live is a React application that allows users to explore their top artists
+from LastFM and track which ones they have seen live. The app fetches data from
+the LastFM API and provides an interactive interface to mark artists as "seen"
+or "not seen." It also displays a pie chart summarizing the percentage of
+artists seen live.
 
 ## Features
 
