@@ -32,7 +32,14 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        env:
+          VITE_LASTFM_API_KEY: ${{ secrets.VITE_LASTFM_API_KEY }}
+        run: |
+          if [ -z "$VITE_LASTFM_API_KEY" ]; then
+            echo "::error::Set the VITE_LASTFM_API_KEY repository secret before deploying."
+            exit 1
+          fi
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
