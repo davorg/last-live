@@ -4,6 +4,9 @@ Last Live follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Separate the API client, request state, UI sections and shared image export
+  logic while preserving existing app behaviour and saved data.
+
 ## [1.0.1] - 2026-11-19
 
 - Use Node.js 24 LTS consistently for local development and CI.
