@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 const apiURL = 'https://ws.audioscrobbler.com/2.0/**';
 const artists = [
@@ -74,6 +75,29 @@ test('restores marks after reloading the production app', async ({ page }) => {
   await expect(artistRow(page, 'Radiohead').getByRole('checkbox')).toBeChecked();
   await expect(artistRow(page, 'Pulp').getByRole('checkbox')).not.toBeChecked();
   await expect(page.getByText('You have seen 50.00%')).toBeVisible();
+});
+
+test('downloads artist and results images as valid PNGs', async ({ page }) => {
+  await page.route(apiURL, route => respondWithArtists(route));
+  await page.goto('./');
+  await search(page);
+  await artistRow(page, 'Radiohead').getByRole('checkbox').check();
+  await expect(page.getByText('You have seen 50.00%')).toBeVisible();
+
+  for (const [button, filename] of [
+    ['Share Table', 'last-live-artists-table.png'],
+    ['Share Results', 'last-live-results.png'],
+  ]) {
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: button }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe(filename);
+    expect(await download.failure()).toBeNull();
+    const image = await readFile(await download.path());
+    expect(image.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    expect(image.readUInt32BE(16)).toBeGreaterThan(0);
+    expect(image.readUInt32BE(20)).toBeGreaterThan(0);
+  }
 });
 
 for (const failure of ['HTTP error', 'API error', 'network error']) {

@@ -31,7 +31,9 @@ Check out the live site here: [Last Live](https://davorg.dev/last-live/)
 
 ### Prerequisites
 
-- Node.js and npm installed on your system.
+- Node.js 24 LTS and its bundled npm. The required major version is declared in
+  `.nvmrc` and used by both CI jobs. If you use nvm, run `nvm install` and
+  `nvm use` from the repository before installing dependencies.
 
 ### Installation
 
@@ -45,7 +47,7 @@ Check out the live site here: [Last Live](https://davorg.dev/last-live/)
    ```
 3. Install dependencies:
    ```bash
-   npm install
+   npm ci
    ```
 4. Copy `.env.example` to `.env` and set `VITE_LASTFM_API_KEY` to your
    [Last.fm API key](https://www.last.fm/api/account/create).
@@ -70,7 +72,7 @@ The build output will be in the `dist/` directory.
 
 ### Checking Changes
 
-The browser tests require Node.js 20 or later.
+Use the same Node.js 24 LTS environment for building, linting and browser tests.
 
 Install the test browser once after installing npm dependencies:
 ```bash
@@ -103,6 +105,16 @@ input validation (#9), and proxy configuration (#5) alongside those fixes.
 Use `npm test -- --headed` to watch a run. On failure, inspect `test-results/`
 for screenshots and traces, or run `npx playwright show-report` for the HTML
 report.
+
+### Dependency Maintenance
+
+Dependabot checks npm packages and GitHub Actions weekly. Compatible minor and
+patch updates are grouped by runtime dependencies, development dependencies,
+and Actions; major updates remain separate for review. Commit lockfile changes
+and run the same lint, browser and production-build checks before merging.
+
+Use `npm audit` to review dependency advisories. Vite loads the app's `.env`
+files natively; a separate dotenv dependency is not required.
 
 ### Deploying to GitHub Pages
 

@@ -4,6 +4,14 @@ Last Live follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-19
+
+- Use Node.js 24 LTS consistently for local development and CI.
+- Refresh runtime dependencies and the supported Vite, React plugin and ESLint
+  toolchain, retaining the existing browser build targets.
+- Use Vite's native environment-file loading.
+- Update deployment Actions and add weekly Dependabot checks for npm and Actions.
+
 ## [1.0.0] - 2026-11-19
 
 First versioned release of Last Live, establishing the existing app as the
