@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { MAX_ARTIST_COUNT } from '../searchQuery';
 
-export default function SearchForm({ onSearch }) {
+export default function SearchForm({ onSearch, error }) {
   const [username, setUsername] = useState('');
   const [timePeriod, setTimePeriod] = useState('7day');
   const [artistCount, setArtistCount] = useState(5);
@@ -17,6 +18,7 @@ export default function SearchForm({ onSearch }) {
         type="text"
         className="form-control"
         value={username}
+        required
         onChange={event => setUsername(event.target.value)}
         onKeyPress={handleKeyPress}
       />
@@ -40,12 +42,26 @@ export default function SearchForm({ onSearch }) {
         type="number"
         className="form-control"
         value={artistCount}
+        min={1}
+        max={MAX_ARTIST_COUNT}
+        step={1}
+        required
+        aria-describedby="artist-count-help"
         onChange={event => setArtistCount(event.target.value)}
       />
+      <div className="form-text" id="artist-count-help">
+        Choose between 1 and {MAX_ARTIST_COUNT} artists.
+      </div>
 
       <button className="btn btn-primary mt-3" onClick={submitSearch}>
         Get Top Artists
       </button>
+
+      {error && (
+        <div className="alert alert-danger mt-3" role="alert">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

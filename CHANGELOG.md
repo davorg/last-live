@@ -4,6 +4,12 @@ Last Live follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-19
+
+- Validate usernames and artist counts before requesting data, with a documented
+  app limit of 1000 artists and useful feedback beside the search controls.
+- Trim usernames and safely encode request parameters for direct or custom
+  client endpoints, preventing username text from altering other parameters.
 - Separate the API client, request state, UI sections and shared image export
   logic while preserving existing app behaviour and saved data.
 

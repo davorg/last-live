@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { normalizeSearchQuery } from './searchQuery';
 
 export default function useTopArtists(client) {
   const [request, setRequest] = useState({
@@ -8,10 +9,10 @@ export default function useTopArtists(client) {
   });
 
   const search = async query => {
-    const submittedQuery = { ...query };
     setRequest(previous => ({ ...previous, status: 'loading', error: null }));
 
     try {
+      const submittedQuery = normalizeSearchQuery(query);
       const artists = await client.getTopArtists(submittedQuery);
       setRequest({
         status: 'success',
