@@ -75,13 +75,10 @@ jobs:
 
       - name: Build
         env:
+          VITE_LASTFM_API_URL: ${{ vars.VITE_LASTFM_API_URL }}
           VITE_LASTFM_API_KEY: ${{ secrets.VITE_LASTFM_API_KEY }}
-        run: |
-          if [ -z "$VITE_LASTFM_API_KEY" ]; then
-            echo "::error::Set the VITE_LASTFM_API_KEY repository secret before deploying."
-            exit 1
-          fi
-          npm run build
+        # Vite validates the URL and requires a key only for direct requests.
+        run: npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v6.0.0

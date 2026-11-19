@@ -4,6 +4,17 @@ Last Live follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-19
+
+- Configure the API endpoint with `VITE_LASTFM_API_URL`, retaining direct
+  Last.fm requests as the default and supporting separately hosted proxies.
+- Exclude the frontend API key from proxy builds, including when a previous
+  direct key remains in the build environment, and omit keyless request parameters.
+- Validate API configuration for local development and deployment; pass the
+  endpoint from a GitHub Actions variable and require a key only for direct use.
+- Verify direct and keyless proxy builds with mocked browser requests and check
+  that proxy artifacts do not contain a leftover frontend key.
+
 ## [1.0.3] - 2026-11-19
 
 - Cancel superseded searches and prevent obsolete responses from changing the

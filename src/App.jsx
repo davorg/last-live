@@ -8,7 +8,10 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { version } from '../package.json';
 
-const lastfm = createLastFmClient({ apiKey: import.meta.env.VITE_LASTFM_API_KEY });
+const lastfm = createLastFmClient({
+  endpoint: import.meta.env.VITE_LASTFM_API_URL,
+  apiKey: import.meta.env.VITE_LASTFM_API_KEY,
+});
 
 function App() {
   const { status, result, error, search } = useTopArtists(lastfm);
