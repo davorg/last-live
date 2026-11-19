@@ -42,6 +42,27 @@ test('uses the endpoint supplied by the caller', async () => {
   assert.equal(requestedURL.origin + requestedURL.pathname, 'https://proxy.example/lastfm');
 });
 
+for (const apiKey of [undefined, '', '   ']) {
+  test(`omits api_key for a proxy when its configured key is ${JSON.stringify(apiKey)}`, async () => {
+    let requestedURL;
+    const client = createLastFmClient({
+      apiKey,
+      endpoint: 'https://proxy.example/lastfm?api_key=old&api_key=older&route=artists',
+      fetchImpl: async url => {
+        requestedURL = new URL(url);
+        return Response.json({ topartists: { artist: [] } });
+      },
+    });
+    const username = ' Björk &limit=999+%?#=yes ';
+    await client.getTopArtists({ ...query, username });
+    assert.deepEqual(Object.fromEntries(requestedURL.searchParams), {
+      route: 'artists', method: 'user.gettopartists', user: username.trim(),
+      period: '12month', limit: '2', format: 'json',
+    });
+    assert.equal(requestedURL.searchParams.has('api_key'), false);
+  });
+}
+
 for (const [label, endpoint] of [
   ['direct', 'https://ws.audioscrobbler.com/2.0/'],
   ['custom', 'https://proxy.example/lastfm?token=keep&limit=999&limit=888&format=xml&user=old'],

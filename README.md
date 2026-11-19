@@ -63,8 +63,49 @@ Check out the live site here: [Last Live](https://davorg.dev/last-live/)
    ```bash
    npm ci
    ```
-4. Copy `.env.example` to `.env` and set `VITE_LASTFM_API_KEY` to your
-   [Last.fm API key](https://www.last.fm/api/account/create).
+4. Copy `.env.example` to `.env` and configure direct Last.fm requests or a
+   proxy as described below.
+
+### API Configuration
+
+The defaults preserve direct Last.fm access. For direct requests, leave the URL
+blank and set your [Last.fm API key](https://www.last.fm/api/account/create):
+
+```dotenv
+VITE_LASTFM_API_URL=
+VITE_LASTFM_API_KEY=your-lastfm-api-key
+```
+
+For a separately hosted proxy that adds its own key on the server:
+
+```dotenv
+VITE_LASTFM_API_URL=https://proxy.example/lastfm
+VITE_LASTFM_API_KEY=
+```
+
+| Setting | Behaviour |
+| --- | --- |
+| `VITE_LASTFM_API_URL` | Blank uses `https://ws.audioscrobbler.com/2.0/`. Otherwise, set an absolute HTTP(S) endpoint URL. |
+| `VITE_LASTFM_API_KEY` | Required for the default endpoint and explicit URLs on `ws.audioscrobbler.com`. Embedded in direct builds; ignored and excluded from proxy builds. |
+
+Whitespace around settings is trimmed. Invalid URLs, embedded credentials, URL
+fragments and `api_key` URL parameters stop the development server or build with
+a configuration error. Unrelated endpoint query parameters are preserved;
+the app controls `method`, `user`, `period`, `limit` and `format`. A request
+without a configured key omits `api_key` entirely.
+
+Proxy requests use GET with those same parameters. The proxy must return the
+Last.fm JSON response shape (`topartists.artist`, or `error` and `message` on
+failure) and permit the app's browser origin through CORS when hosted on another
+origin. Use HTTPS for a proxy called from the HTTPS live site. The proxy itself
+is maintained separately; deployed integration checks are tracked in #17.
+
+These settings are applied at build time, not read from the hosting server at
+runtime. Rebuild and redeploy after changing them; restart the development
+server after editing `.env`. Proxy builds exclude a leftover frontend key even
+if it remains in `.env` or the build environment. This does not revoke a key
+already published in an older direct build; replace it on the server when the
+proxy migration is complete. Never put the Last.fm shared secret in this app.
 
 ### Running the App
 
@@ -101,15 +142,18 @@ npm run lint
 npm test
 ```
 
-`npm test` first runs the API-client tests with Node's built-in test runner,
-then runs the Playwright browser checks. Use `npm run test:unit` for the API
-tests alone; they use an injected fetch function and require no network access.
+`npm test` first runs the API-client and configuration tests with Node's built-in
+test runner, then runs the Playwright browser checks. Use `npm run test:unit`
+for the API/configuration tests alone; they use an injected fetch function and
+local builds and require no network access. Build regressions check that direct
+mode rejects a missing key and that a proxy artifact excludes a leftover key.
 
-Playwright builds the production app into `.test-dist/` with a dummy API key,
-starts a local preview server, and runs Chromium tests. No Last.fm credentials
+Playwright builds the direct production app into `.test-dist/` with a dummy API
+key and a keyless proxy app into `.test-proxy-dist/`, starts local preview
+servers, and runs Chromium tests. No Last.fm credentials
 are needed: API responses are mocked, external browser requests (including
 analytics) are blocked, and each test has isolated browser storage. The normal
-`dist/` build is left untouched. Ports 4173 and 4174 must be available: the
+`dist/` build is left untouched. Ports 4173, 4174 and 4175 must be available: the
 storage regression tests also run against the development app with React
 Strict Mode enabled, using a separate `.test-cache/` directory.
 
@@ -120,8 +164,10 @@ Strict Mode, invalid values, blocked storage, failed writes and recovery in both
 production and development. Input tests cover validation, limits, whitespace
 and special-character encoding. Request regressions cover cancellation, responses
 arriving out of order (including clients that ignore cancellation), loading,
-malformed responses, failures and recovery. Add proxy configuration coverage
-alongside #5.
+malformed responses, failures and recovery. Proxy build tests cover encoded
+parameters, key omission, successful/empty results, API errors, throttling,
+non-JSON failures and retry using mocked responses. They do not verify a live
+proxy's CORS, caching or rate-limit policy; those integration checks remain #17.
 
 Use `npm test -- --headed` to watch a run. On failure, inspect `test-results/`
 for screenshots and traces, or run `npx playwright show-report` for the HTML
@@ -133,6 +179,8 @@ report.
 
 - `src/api/lastfm.js` constructs requests and handles the Last.fm response.
   Its client factory accepts endpoint, API-key and fetch dependencies.
+- `src/api/config.js` resolves and validates build configuration. Vite explicitly
+  exposes only the effective URL and frontend key, excluding the key in proxy mode.
 - `src/useTopArtists.js` owns request status, cancellation, errors and successful
   results, including a snapshot of the submitted query. It ignores completions
   from superseded requests even if cancellation does not stop them.
@@ -143,9 +191,8 @@ report.
 - `src/downloadImage.js` shares PNG capture/download logic; each exporting
   component supplies its own section through a React ref.
 
-The UI continues using the direct Last.fm endpoint. User-configurable proxy
-deployment (#5) is a follow-up change at this boundary; the client's existing
-endpoint dependency shares the same request and response handling.
+Direct Last.fm and configured proxy requests share the same request construction
+and response handling.
 
 ### Dependency Maintenance
 
@@ -159,19 +206,26 @@ files natively; a separate dotenv dependency is not required.
 
 ### Deploying to GitHub Pages
 
-Add a repository Actions secret named `VITE_LASTFM_API_KEY` in GitHub's
-**Settings → Secrets and variables → Actions**. The deployment workflow passes
-this secret to the build and stops if it is missing.
+For direct requests, add a repository Actions secret named
+`VITE_LASTFM_API_KEY` in **Settings → Secrets and variables → Actions** and leave
+the `VITE_LASTFM_API_URL` Actions variable unset. The build stops if the key is
+missing, including when the URL variable explicitly selects Last.fm.
+
+For proxy requests, set the repository **Actions variable**
+`VITE_LASTFM_API_URL` to the proxy endpoint. No frontend key secret is required;
+an existing key secret is ignored and excluded from the proxy artifact. The
+workflow passes the URL variable and key secret into Vite, which validates both
+deployment modes using the same rules as local builds.
 
 Pull requests run lint and the production browser tests without deployment
 credentials. Pushes to `main` and manual runs on `main` run the same checks,
-then build a separate Pages artifact using the real key and deploy only after
+then build a separate Pages artifact using the deployment settings and deploy only after
 the checks pass. Test builds are never uploaded as the Pages artifact.
 
-Vite embeds the key in the browser bundle at build time, so adding or changing
-the secret requires a new deployment. A local `.env` file is ignored by Git and
-is not available to GitHub Actions. Only use the API key here, never your Last.fm
-shared secret.
+After changing the Actions variable or secret, run the deployment workflow on
+`main` (or push another checked change) to rebuild and deploy. Changing a setting
+alone does not change the deployed bundle. A local `.env` file is ignored by Git
+and is not available to GitHub Actions.
 
 ## Versioning and Releases
 

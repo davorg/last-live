@@ -1,4 +1,5 @@
 import { normalizeSearchQuery } from '../searchQuery.js';
+import { DEFAULT_LASTFM_API_URL } from './config.js';
 
 const connectionError = 'Could not connect to Last.fm. Check your connection and try again.';
 
@@ -11,7 +12,7 @@ function isArtist(artist) {
 
 export function createLastFmClient({
   apiKey,
-  endpoint = 'https://ws.audioscrobbler.com/2.0/',
+  endpoint = DEFAULT_LASTFM_API_URL,
   fetchImpl = fetch,
 }) {
   return {
@@ -23,9 +24,11 @@ export function createLastFmClient({
         user: username,
         period: timePeriod,
         limit: artistCount,
-        api_key: apiKey,
+        ...(apiKey?.trim() ? { api_key: apiKey.trim() } : {}),
         format: 'json',
       };
+      // Never inherit a key from an endpoint's query string.
+      url.searchParams.delete('api_key');
       for (const [name, value] of Object.entries(parameters)) {
         url.searchParams.set(name, value);
       }
