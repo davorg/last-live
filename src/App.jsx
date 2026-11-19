@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSeenArtists from './useSeenArtists';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Pie } from 'react-chartjs-2';
@@ -14,19 +15,8 @@ function App() {
   const [timePeriod, setTimePeriod] = useState('7day');
   const [artistCount, setArtistCount] = useState(5);
   const [artists, setArtists] = useState([]);
-  const [seenArtists, setSeenArtists] = useState({});
+  const { seenArtists, toggleSeenArtist, storageWarning } = useSeenArtists();
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const storedSeenArtists = localStorage.getItem('seenArtists');
-    if (storedSeenArtists) {
-      setSeenArtists(JSON.parse(storedSeenArtists));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('seenArtists', JSON.stringify(seenArtists));
-  }, [seenArtists]);
 
   const fetchArtists = async () => {
     try {
@@ -49,13 +39,6 @@ function App() {
     } catch (err) {
       setError(err.message);
     }
-  };
-
-  const handleCheckboxChange = (artistName) => {
-    setSeenArtists((prev) => ({
-      ...prev,
-      [artistName]: !prev[artistName],
-    }));
   };
 
   const calculateSeenPercentage = () => {
@@ -117,6 +100,12 @@ function App() {
     <div className="container mt-4">
       <h1 className="text-center">LastFM Top Artists</h1>
 
+      {storageWarning && (
+        <div className="alert alert-warning mt-3" role="status">
+          {storageWarning}
+        </div>
+      )}
+
       {/* Form Section */}
       <div className="mb-4">
         <label className="form-label">LastFM Username:</label>
@@ -174,7 +163,7 @@ function App() {
                   <input
                     type="checkbox"
                     checked={!!seenArtists[artist.name]}
-                    onChange={() => handleCheckboxChange(artist.name)}
+                    onChange={() => toggleSeenArtist(artist.name)}
                   />
                 </li>
               ))}

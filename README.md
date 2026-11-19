@@ -13,6 +13,16 @@ artists seen live.
 - View a dynamic pie chart showing the percentage of artists seen live.
 - Data persistence using LocalStorage.
 
+Seen-artist marks are saved in this browser under `last-live:v1:seenArtists`.
+On the first visit after upgrading, valid marks from the older `seenArtists`
+key are copied to the new key. The original is retained as a recovery copy;
+the new key takes precedence on later visits.
+
+If saved data cannot be read or has an invalid format, the app leaves it
+untouched and allows marking artists for the current visit only. A warning
+also appears if changes cannot be saved (for example, because browser storage
+is blocked or full). Marks are not synchronised between devices.
+
 ## Live Demo
 
 Check out the live site here: [Last Live](https://davorg.dev/last-live/)
@@ -79,13 +89,16 @@ Playwright builds the production app into `.test-dist/` with a dummy API key,
 starts a local preview server, and runs Chromium tests. No Last.fm credentials
 are needed: API responses are mocked, external browser requests (including
 analytics) are blocked, and each test has isolated browser storage. The normal
-`dist/` build is left untouched. Port 4173 must be available.
+`dist/` build is left untouched. Ports 4173 and 4174 must be available: the
+storage regression tests also run against the development app with React
+Strict Mode enabled, using a separate `.test-cache/` directory.
 
 The initial tests cover searching with filters, marking/unmarking artists,
 restoring marks after a production reload, HTTP/API/network failures and retry,
-and empty results. Add regression cases for development Strict Mode and corrupt
-storage (#7), request ordering (#8), input validation (#9), and proxy
-configuration (#5) alongside those fixes.
+and empty results. Storage regressions cover legacy migration, reloads,
+Strict Mode, invalid values, blocked storage, failed writes and recovery in both
+production and development. Add regression cases for request ordering (#8),
+input validation (#9), and proxy configuration (#5) alongside those fixes.
 
 Use `npm test -- --headed` to watch a run. On failure, inspect `test-results/`
 for screenshots and traces, or run `npx playwright show-report` for the HTML
