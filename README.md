@@ -19,6 +19,14 @@ Leading/trailing username whitespace is removed; other characters are preserved
 and URL-encoded so they cannot alter the request parameters. Invalid input is
 reported beside the search controls without making an API request.
 
+The app shows when a search is loading. Submitting another search cancels the
+previous request, and only the latest submission can update the screen. Previous
+results are cleared when starting a search, so a failed request cannot leave an
+old chart looking current. Empty charts show a message with the searched
+username; API errors preserve Last.fm's explanation, with readable fallbacks for
+connection failures and unexpected responses. Correct the input or submit again
+to retry.
+
 Seen-artist marks are saved in this browser under `last-live:v1:seenArtists`.
 On the first visit after upgrading, valid marks from the older `seenArtists`
 key are copied to the new key. The original is retained as a recovery copy;
@@ -110,8 +118,10 @@ restoring marks after a production reload, HTTP/API/network failures and retry,
 and empty results. Storage regressions cover legacy migration, reloads,
 Strict Mode, invalid values, blocked storage, failed writes and recovery in both
 production and development. Input tests cover validation, limits, whitespace
-and special-character encoding. Add regression cases for request ordering (#8)
-and proxy configuration (#5) alongside those fixes.
+and special-character encoding. Request regressions cover cancellation, responses
+arriving out of order (including clients that ignore cancellation), loading,
+malformed responses, failures and recovery. Add proxy configuration coverage
+alongside #5.
 
 Use `npm test -- --headed` to watch a run. On failure, inspect `test-results/`
 for screenshots and traces, or run `npx playwright show-report` for the HTML
@@ -123,8 +133,9 @@ report.
 
 - `src/api/lastfm.js` constructs requests and handles the Last.fm response.
   Its client factory accepts endpoint, API-key and fetch dependencies.
-- `src/useTopArtists.js` owns request status, errors and successful results,
-  including a snapshot of the submitted query.
+- `src/useTopArtists.js` owns request status, cancellation, errors and successful
+  results, including a snapshot of the submitted query. It ignores completions
+  from superseded requests even if cancellation does not stop them.
 - `src/searchQuery.js` normalises and validates input for both the request hook
   and API client, with a shared artist-count limit.
 - `src/useSeenArtists.js` owns saved marks and storage migration/failure handling.
@@ -133,8 +144,8 @@ report.
   component supplies its own section through a React ref.
 
 The UI continues using the direct Last.fm endpoint. User-configurable proxy
-deployment (#5) and request ordering/error improvements (#8) are follow-up
-changes at these boundaries.
+deployment (#5) is a follow-up change at this boundary; the client's existing
+endpoint dependency shares the same request and response handling.
 
 ### Dependency Maintenance
 

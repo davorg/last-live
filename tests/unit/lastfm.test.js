@@ -77,29 +77,98 @@ test('reports an HTTP failure even when the response is not JSON', async () => {
   const client = clientWithResponse(new Response('<h1>Forbidden</h1>', {
     status: 403, statusText: 'Forbidden',
   }));
-  await assert.rejects(() => client.getTopArtists(query), { message: 'Error: 403 Forbidden' });
+  await assert.rejects(() => client.getTopArtists(query), {
+    message: 'Last.fm request failed (HTTP 403 Forbidden). Please try again.',
+  });
 });
 
 for (const [description, payload] of [
   ['a missing chart', {}],
   ['a chart without artists', { topartists: {} }],
-  ['an API error payload', { error: 10, message: 'Invalid API key' }],
+  ['a null body', null],
+  ['a non-array artist list', { topartists: { artist: {} } }],
+  ['a null artist', { topartists: { artist: [null] } }],
+  ['an artist without a name', { topartists: { artist: [{ playcount: '100' }] } }],
+  ['an artist with a blank name', { topartists: { artist: [{ name: ' ', playcount: '100' }] } }],
+  ['an artist with an invalid playcount', { topartists: { artist: [{ name: 'Pulp', playcount: 'oops' }] } }],
+  ['an artist with a negative playcount', { topartists: { artist: [{ name: 'Pulp', playcount: '-1' }] } }],
+  ['an artist with a missing playcount', { topartists: { artist: [{ name: 'Pulp' }] } }],
 ]) {
   test(`rejects ${description}`, async () => {
     const client = clientWithResponse(Response.json(payload));
-    await assert.rejects(() => client.getTopArtists(query), { message: 'Invalid data format received from API' });
+    await assert.rejects(() => client.getTopArtists(query), {
+      message: 'Last.fm returned an unexpected artist list. Please try again.',
+    });
   });
 }
 
-test('propagates network failures for the request hook to present', async () => {
+test('explains network failures without losing the underlying error', async () => {
   const error = new TypeError('Failed to fetch');
   const client = createLastFmClient({ apiKey: 'test-key', fetchImpl: async () => { throw error; } });
+  await assert.rejects(() => client.getTopArtists(query), failure => {
+    assert.equal(failure.message, 'Could not connect to Last.fm. Check your connection and try again.');
+    assert.equal(failure.cause, error);
+    return true;
+  });
+});
+
+test('explains unreadable JSON responses', async () => {
+  const client = clientWithResponse(new Response('not JSON'));
+  await assert.rejects(() => client.getTopArtists(query), {
+    message: 'Last.fm returned an unreadable response. Please try again.',
+  });
+});
+
+for (const status of [200, 403, 429, 503]) {
+  test(`preserves an API error message with HTTP status ${status}`, async () => {
+    const client = clientWithResponse(Response.json({ error: 10, message: ' Invalid API key ' }, { status }));
+    await assert.rejects(() => client.getTopArtists(query), { message: 'Last.fm: Invalid API key' });
+  });
+}
+
+test('falls back to the API error code when its message is missing', async () => {
+  const client = clientWithResponse(Response.json({ error: 29, message: '   ' }));
+  await assert.rejects(() => client.getTopArtists(query), {
+    message: 'Last.fm returned API error 29. Please try again.',
+  });
+});
+
+test('reports an HTTP failure when JSON has no API error', async () => {
+  const client = clientWithResponse(Response.json({ topartists: { artist: artists } }, { status: 503 }));
+  await assert.rejects(() => client.getTopArtists(query), /HTTP 503/);
+});
+
+test('accepts numeric and zero playcounts', async () => {
+  const result = [{ name: 'Pulp', playcount: 0 }, { name: 'Radiohead', playcount: '0' }];
+  const client = clientWithResponse(Response.json({ topartists: { artist: result } }));
+  assert.deepEqual(await client.getTopArtists(query), result);
+});
+
+test('passes cancellation to fetch and preserves its AbortError', async () => {
+  const controller = new AbortController();
+  const client = createLastFmClient({
+    apiKey: 'test-key',
+    fetchImpl: async (url, { signal }) => {
+      assert.equal(signal, controller.signal);
+      controller.abort();
+      signal.throwIfAborted();
+    },
+  });
+  await assert.rejects(() => client.getTopArtists(query, { signal: controller.signal }),
+    error => error === controller.signal.reason);
+});
+
+test('preserves cancellation while reading the response body', async () => {
+  const error = new DOMException('Aborted', 'AbortError');
+  const client = clientWithResponse({ ok: true, status: 200, json: async () => { throw error; } });
   await assert.rejects(() => client.getTopArtists(query), failure => failure === error);
 });
 
-test('propagates unreadable JSON responses', async () => {
-  const client = clientWithResponse(new Response('not JSON'));
-  await assert.rejects(() => client.getTopArtists(query), SyntaxError);
+test('explains a connection failure while reading the response body', async () => {
+  const client = clientWithResponse({ ok: true, status: 200, json: async () => { throw new TypeError('Failed to fetch'); } });
+  await assert.rejects(() => client.getTopArtists(query), {
+    message: 'Could not connect to Last.fm. Check your connection and try again.',
+  });
 });
 
 for (const [description, username] of [

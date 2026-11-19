@@ -114,7 +114,9 @@ for (const failure of ['HTTP error', 'API error', 'network error']) {
     await page.goto('./');
     await search(page);
     await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByRole('alert')).toContainText(/\S/);
+    await expect(page.getByRole('alert')).toHaveText(failure === 'network error'
+      ? 'Could not connect to Last.fm. Check your connection and try again.'
+      : 'Last.fm: Invalid API key');
     await expect(page.getByRole('checkbox')).toHaveCount(0);
 
     await search(page);
@@ -131,6 +133,7 @@ test('clears previous results for an empty artist list and can search again', as
   await expect(page.getByRole('listitem')).toHaveCount(2);
 
   await search(page, 'empty-listener');
+  await expect(page.getByRole('status')).toContainText('No top artists found for empty-listener');
   await expect(page.getByRole('listitem')).toHaveCount(0);
   await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
@@ -138,7 +141,45 @@ test('clears previous results for an empty artist list and can search again', as
   await search(page, 'another-listener');
   await expect(page.getByRole('listitem')).toHaveCount(2);
   await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('status')).toHaveCount(0);
 });
+
+test('clears previous results on failure and recovers on another search', async ({ page }) => {
+  let attempts = 0;
+  await page.route(apiURL, route => attempts++ === 1
+    ? route.fulfill({ status: 503, body: '<html>Service unavailable</html>' })
+    : respondWithArtists(route));
+  await page.goto('./');
+  await search(page);
+  await expect(page.getByRole('listitem')).toHaveCount(2);
+
+  await search(page, 'another-listener');
+  await expect(page.getByRole('alert')).toContainText('HTTP 503');
+  await expect(page.getByRole('listitem')).toHaveCount(0);
+  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Share', exact: false })).toHaveCount(0);
+
+  await search(page);
+  await expect(page.getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+for (const [description, response, message] of [
+  ['non-JSON success', { body: 'not JSON' }, 'Last.fm returned an unreadable response.'],
+  ['malformed artists', { json: { topartists: { artist: [null] } } }, 'Last.fm returned an unexpected artist list.'],
+]) {
+  test(`explains ${description} and allows retry`, async ({ page }) => {
+    let attempts = 0;
+    await page.route(apiURL, route => attempts++ === 0 ? route.fulfill(response) : respondWithArtists(route));
+    await page.goto('./');
+    await search(page);
+    await expect(page.getByRole('alert')).toContainText(message);
+    await expect(page.getByRole('listitem')).toHaveCount(0);
+    await search(page);
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  });
+}
 
 for (const [description, username] of [['empty', ''], ['whitespace-only', '   ']]) {
   test(`validates ${description} username input without a request and allows correction`, async ({ page }) => {
