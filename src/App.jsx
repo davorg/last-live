@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import html2canvas from 'html2canvas';
+import { version } from '../package.json';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -196,6 +197,10 @@ function App() {
           {error}
         </div>
       )}
+
+      <footer className="mt-4 text-body-secondary">
+        <small>Last Live v{version}</small>
+      </footer>
     </div>
   );
 }

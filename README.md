@@ -120,6 +120,53 @@ the secret requires a new deployment. A local `.env` file is ignored by Git and
 is not available to GitHub Actions. Only use the API key here, never your Last.fm
 shared secret.
 
+## Versioning and Releases
+
+Last Live uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html),
+starting at **1.0.0**. `package.json` is the source of truth: Vite embeds its
+version in the app footer during the build. See [CHANGELOG.md](CHANGELOG.md)
+for release notes.
+
+The compatibility contract covers documented deployment configuration, the
+Last.fm/proxy integration, and saved/imported/exported data formats:
+
+- **PATCH** (`1.0.0` → `1.0.1`): compatible bug fixes.
+- **MINOR** (`1.0.0` → `1.1.0`): compatible new functionality or deprecations.
+- **MAJOR** (`1.0.0` → `2.0.0`): incompatible changes to that contract, such as
+  removing a documented configuration option or requiring manual data conversion.
+
+Automatic migrations that preserve existing data are compatible changes.
+The storage schema version is independent of the app version; keep the current
+storage key unless its data format actually changes.
+
+Include the appropriate version bump and changelog entry in a PR that changes
+shipped behaviour. Documentation, tests and internal refactors that preserve
+behaviour do not require a release bump. To prepare a bug-fix release, run:
+
+```bash
+npm version patch --no-git-tag-version
+```
+
+Use `minor` or `major` instead for the other release types. This updates both
+`package.json` and `package-lock.json` without creating a commit or tag. Add the
+release notes under the new version in `CHANGELOG.md`, run lint, tests and the
+production build, and commit the changes on the issue branch for review.
+
+After the release commit is merged and its checks and deployment pass, create
+and push an annotated Git tag matching that commit's package version. For
+example, for the initial release (replace `RELEASE_COMMIT` with the merged
+commit SHA):
+
+```bash
+git tag -a v1.0.0 RELEASE_COMMIT -m "Release 1.0.0"
+git push origin v1.0.0
+```
+
+Use the new version in both the tag name and message for subsequent releases.
+Released versions and tags are immutable; corrections get a new version. Tags
+identify releases; Pages deployment continues to run from checked merges to
+`main`. This repository is a hosted app and is not published to npm.
+
 ## License
 
 This project is open-source and available under the [MIT License](LICENSE).
