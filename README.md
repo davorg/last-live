@@ -13,6 +13,12 @@ artists seen live.
 - View a dynamic pie chart showing the percentage of artists seen live.
 - Data persistence using LocalStorage.
 
+Searches require a nonempty Last.fm username and a whole-number artist count
+from 1 to 1000. This is an app limit to keep lists and image exports bounded.
+Leading/trailing username whitespace is removed; other characters are preserved
+and URL-encoded so they cannot alter the request parameters. Invalid input is
+reported beside the search controls without making an API request.
+
 Seen-artist marks are saved in this browser under `last-live:v1:seenArtists`.
 On the first visit after upgrading, valid marks from the older `seenArtists`
 key are copied to the new key. The original is retained as a recovery copy;
@@ -103,8 +109,9 @@ The initial tests cover searching with filters, marking/unmarking artists,
 restoring marks after a production reload, HTTP/API/network failures and retry,
 and empty results. Storage regressions cover legacy migration, reloads,
 Strict Mode, invalid values, blocked storage, failed writes and recovery in both
-production and development. Add regression cases for request ordering (#8),
-input validation (#9), and proxy configuration (#5) alongside those fixes.
+production and development. Input tests cover validation, limits, whitespace
+and special-character encoding. Add regression cases for request ordering (#8)
+and proxy configuration (#5) alongside those fixes.
 
 Use `npm test -- --headed` to watch a run. On failure, inspect `test-results/`
 for screenshots and traces, or run `npx playwright show-report` for the HTML
@@ -118,14 +125,16 @@ report.
   Its client factory accepts endpoint, API-key and fetch dependencies.
 - `src/useTopArtists.js` owns request status, errors and successful results,
   including a snapshot of the submitted query.
+- `src/searchQuery.js` normalises and validates input for both the request hook
+  and API client, with a shared artist-count limit.
 - `src/useSeenArtists.js` owns saved marks and storage migration/failure handling.
 - `src/components/` contains the search controls, artist list and results/chart.
 - `src/downloadImage.js` shares PNG capture/download logic; each exporting
   component supplies its own section through a React ref.
 
 The UI continues using the direct Last.fm endpoint. User-configurable proxy
-deployment (#5), input encoding/validation (#9), and request ordering/error
-improvements (#8) are separate follow-up changes at these boundaries.
+deployment (#5) and request ordering/error improvements (#8) are follow-up
+changes at these boundaries.
 
 ### Dependency Maintenance
 

@@ -139,3 +139,68 @@ test('clears previous results for an empty artist list and can search again', as
   await expect(page.getByRole('listitem')).toHaveCount(2);
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
+
+for (const [description, username] of [['empty', ''], ['whitespace-only', '   ']]) {
+  test(`validates ${description} username input without a request and allows correction`, async ({ page }) => {
+    let requests = 0;
+    await page.route(apiURL, route => { requests++; return respondWithArtists(route); });
+    await page.goto('./');
+    await search(page, username);
+    await expect(page.getByRole('alert')).toContainText('Enter your Last.fm username.');
+    expect(requests).toBe(0);
+
+    await search(page);
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(requests).toBe(1);
+  });
+}
+
+for (const count of ['', '0', '-1', '1.5', '1001']) {
+  test(`validates artist count ${count || '(empty)'} without a request and allows correction`, async ({ page }) => {
+    let requests = 0;
+    await page.route(apiURL, route => { requests++; return respondWithArtists(route); });
+    await page.goto('./');
+    await page.getByRole('spinbutton').fill(count);
+    await search(page);
+    await expect(page.getByRole('alert')).toContainText('Enter a whole number of artists between 1 and 1000.');
+    expect(requests).toBe(0);
+
+    await page.getByRole('spinbutton').fill('2');
+    await search(page);
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(requests).toBe(1);
+  });
+}
+
+test('trims and encodes username characters without overriding request parameters', async ({ page }) => {
+  await page.route(apiURL, route => respondWithArtists(route));
+  await page.goto('./');
+  const username = '  Björk &limit=999+%?#=yes  ';
+  const request = page.waitForRequest(apiURL);
+  await search(page, username);
+  const url = new URL((await request).url());
+  expect(url.searchParams.getAll('user')).toEqual([username.trim()]);
+  expect(url.searchParams.getAll('limit')).toEqual(['5']);
+  expect(url.searchParams.getAll('api_key')).toEqual(['last-live-test-key']);
+  expect(url.hash).toBe('');
+  await expect(page.getByRole('listitem')).toHaveCount(2);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('accepts both artist-count boundaries', async ({ page }) => {
+  await page.route(apiURL, route => {
+    const count = Number(new URL(route.request().url()).searchParams.get('limit'));
+    return respondWithArtists(route, artists.slice(0, Math.min(count, artists.length)));
+  });
+  await page.goto('./');
+  for (const count of ['1', '1000']) {
+    await page.getByRole('spinbutton').fill(count);
+    const request = page.waitForRequest(apiURL);
+    await search(page);
+    expect(new URL((await request).url()).searchParams.getAll('limit')).toEqual([count]);
+    await expect(page.getByRole('listitem')).toHaveCount(count === '1' ? 1 : 2);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  }
+});

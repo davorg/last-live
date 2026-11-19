@@ -24,18 +24,12 @@ function App() {
         </div>
       )}
 
-      <SearchForm onSearch={search} />
+      <SearchForm onSearch={search} error={error} />
 
       {result.artists.length > 0 && (
         <div>
           <ArtistList artists={result.artists} seenArtists={seenArtists} onToggle={toggleSeenArtist} />
           <Results artists={result.artists} seenArtists={seenArtists} />
-        </div>
-      )}
-
-      {error && (
-        <div className="alert alert-danger mt-3" role="alert">
-          {error}
         </div>
       )}
 
