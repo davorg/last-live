@@ -32,6 +32,7 @@ export default function useSeenArtists() {
   const [seenArtists, setSeenArtists] = useState(initial.marks);
   const [storageWarning, setStorageWarning] = useState(initial.warning);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Surface storage-write success/failure in the UI. */
   useEffect(() => {
     // Preserve unreadable data instead of overwriting it with an empty map.
     if (!initial.canSave) return;
@@ -45,6 +46,7 @@ export default function useSeenArtists() {
       setStorageWarning('Your seen-artist marks could not be saved. Changes may be lost when you leave this page.');
     }
   }, [seenArtists, initial]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggleSeenArtist = artistName => {
     setSeenArtists(previous => ({
