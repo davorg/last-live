@@ -87,6 +87,10 @@ npm run lint
 npm test
 ```
 
+`npm test` first runs the API-client tests with Node's built-in test runner,
+then runs the Playwright browser checks. Use `npm run test:unit` for the API
+tests alone; they use an injected fetch function and require no network access.
+
 Playwright builds the production app into `.test-dist/` with a dummy API key,
 starts a local preview server, and runs Chromium tests. No Last.fm credentials
 are needed: API responses are mocked, external browser requests (including
@@ -105,6 +109,23 @@ input validation (#9), and proxy configuration (#5) alongside those fixes.
 Use `npm test -- --headed` to watch a run. On failure, inspect `test-results/`
 for screenshots and traces, or run `npx playwright show-report` for the HTML
 report.
+
+### Code Structure
+
+`App.jsx` connects the API client, request hook, persistence hook and UI sections:
+
+- `src/api/lastfm.js` constructs requests and handles the Last.fm response.
+  Its client factory accepts endpoint, API-key and fetch dependencies.
+- `src/useTopArtists.js` owns request status, errors and successful results,
+  including a snapshot of the submitted query.
+- `src/useSeenArtists.js` owns saved marks and storage migration/failure handling.
+- `src/components/` contains the search controls, artist list and results/chart.
+- `src/downloadImage.js` shares PNG capture/download logic; each exporting
+  component supplies its own section through a React ref.
+
+The UI continues using the direct Last.fm endpoint. User-configurable proxy
+deployment (#5), input encoding/validation (#9), and request ordering/error
+improvements (#8) are separate follow-up changes at these boundaries.
 
 ### Dependency Maintenance
 
