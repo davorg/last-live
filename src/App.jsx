@@ -11,7 +11,7 @@ import { version } from '../package.json';
 const lastfm = createLastFmClient({ apiKey: import.meta.env.VITE_LASTFM_API_KEY });
 
 function App() {
-  const { result, error, search } = useTopArtists(lastfm);
+  const { status, result, error, search } = useTopArtists(lastfm);
   const { seenArtists, toggleSeenArtist, storageWarning } = useSeenArtists();
 
   return (
@@ -25,6 +25,13 @@ function App() {
       )}
 
       <SearchForm onSearch={search} error={error} />
+
+      {status === 'loading' && (
+        <p role="status">Loading artists… You can submit another search to replace this one.</p>
+      )}
+      {status === 'empty' && (
+        <p role="status">No top artists found for {result.query.username} in this time period. Try another time period or username.</p>
+      )}
 
       {result.artists.length > 0 && (
         <div>

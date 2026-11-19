@@ -4,6 +4,15 @@ Last Live follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-19
+
+- Cancel superseded searches and prevent obsolete responses from changing the
+  latest results, errors or loading state.
+- Show loading and empty-result messages, allow replacement searches, and clear
+  previous results when starting another search.
+- Preserve Last.fm API error messages, explain HTTP/connection/unreadable-response
+  failures, and reject malformed artist lists before displaying them.
+
 ## [1.0.2] - 2026-11-19
 
 - Validate usernames and artist counts before requesting data, with a documented
