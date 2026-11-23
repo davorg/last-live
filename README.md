@@ -76,10 +76,10 @@ VITE_LASTFM_API_URL=
 VITE_LASTFM_API_KEY=your-lastfm-api-key
 ```
 
-For a separately hosted proxy that adds its own key on the server:
+For the deployed proxy, which adds its own key on the server:
 
 ```dotenv
-VITE_LASTFM_API_URL=https://proxy.example/lastfm
+VITE_LASTFM_API_URL=https://proxy.davecross.co.uk/lastfm/
 VITE_LASTFM_API_KEY=
 ```
 
@@ -98,7 +98,8 @@ Proxy requests use GET with those same parameters. The proxy must return the
 Last.fm JSON response shape (`topartists.artist`, or `error` and `message` on
 failure) and permit the app's browser origin through CORS when hosted on another
 origin. Use HTTPS for a proxy called from the HTTPS live site. The proxy itself
-is maintained separately; deployed integration checks are tracked in #17.
+is maintained separately. See the [proxy integration notes](docs/proxy.md) for
+the live endpoint, verified behaviour and remaining #17 work.
 
 These settings are applied at build time, not read from the hosting server at
 runtime. Rebuild and redeploy after changing them; restart the development
